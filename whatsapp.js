@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -6,10 +8,20 @@ const pino = require("pino");
 const { handleMessage } = require("./handlers/messageHandler");
 const { getJoinedGroupsAndSave } = require("./utils/fetchGroups");
 
+// ✅ לפני ההתחלה – משחזר את הקובץ creds.json מ־env אם צריך
+const authFolder = process.env.WA_AUTH_FOLDER || "auth";
+if (process.env.CREDS_BASE64) {
+  const authPath = path.join(__dirname, authFolder);
+  if (!fs.existsSync(authPath)) {
+    fs.mkdirSync(authPath, { recursive: true });
+  }
+
+  const credsBuffer = Buffer.from(process.env.CREDS_BASE64, "base64");
+  fs.writeFileSync(path.join(authPath, "creds.json"), credsBuffer);
+}
+
 async function startWhatsApp() {
-  const { state, saveCreds } = await useMultiFileAuthState(
-    process.env.WA_AUTH_FOLDER || "auth"
-  );
+  const { state, saveCreds } = await useMultiFileAuthState(authFolder);
 
   const sock = makeWASocket({
     auth: state,
