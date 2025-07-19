@@ -1,0 +1,18 @@
+# auth & session folders (Baileys)
+auth/
+store.json
+sentMessages.json
+chats.json
+
+# environment variables
+.env
+
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# VSCode files
+.vscode/
