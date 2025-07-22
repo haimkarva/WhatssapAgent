@@ -33,7 +33,7 @@ function extractText(msg) {
 }
 
 function hasDateWithin7Days(text) {
-  const regex = /\b(\d{2})\.(\d{2})\b/g;
+  const regex = /\b(\d{1,2})[./-](\d{1,2})\b/g;
   const matches = [...text.matchAll(regex)];
   const today = new Date();
   const currentYear = today.getFullYear();
@@ -78,14 +78,22 @@ async function handleMessage(sock, msg) {
     const contentText = extractText(msg);
     if (!contentText) return;
 
-    const hasKeyword = includesKeywords(contentText, config.keywords);
+    const keyWords = config.keywords;
+    let hasKeyword;
+    if (keyWords.length !== 0) {
+      hasKeyword = includesKeywords(contentText, config.keywords);
+    }
     const hasValidDate = hasDateWithin7Days(contentText);
     console.log(contentText);
-    if (!hasKeyword || !hasValidDate) {
+    if (!hasKeyword && !hasValidDate) {
       console.log("⛔ לא נמצאו גם מילות מפתח וגם תאריך בטווח 7 ימים");
       return;
     }
 
+    if (!hasValidDate) {
+      console.log("⛔ תאריך לא בטווח של 7 ימים");
+      return;
+    }
     if (sentMessages.includes(contentText)) {
       console.log("⛔ הודעה כפולה - לא נשלחת שוב");
       return;

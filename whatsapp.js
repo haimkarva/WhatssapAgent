@@ -10,6 +10,7 @@ const { getJoinedGroupsAndSave } = require("./utils/fetchGroups");
 
 // ✅ לפני ההתחלה – משחזר את הקובץ creds.json מ־env אם צריך
 const authFolder = process.env.WA_AUTH_FOLDER || "auth";
+// console.log(process.env.CREDS_BASE64);
 if (process.env.CREDS_BASE64) {
   const authPath = path.join(__dirname, authFolder);
   if (!fs.existsSync(authPath)) {
