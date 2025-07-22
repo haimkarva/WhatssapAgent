@@ -79,9 +79,12 @@ async function handleMessage(sock, msg) {
     if (!contentText) return;
 
     const keyWords = config.keywords;
+    console.log("keyword are:", keyWords);
+    console.log("keyword length:", keyWords.length);
     let hasKeyword;
     if (keyWords.length !== 0) {
       hasKeyword = includesKeywords(contentText, config.keywords);
+      console.log(hasKeyword);
     }
     const hasValidDate = hasDateWithin7Days(contentText);
     console.log(contentText);
