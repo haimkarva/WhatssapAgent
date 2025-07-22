@@ -5,6 +5,10 @@ const { downloadMediaMessage } = require("@whiskeysockets/baileys");
 
 const LOG_PATH = path.join(__dirname, "../sentMessages.json");
 
+const ALLOWED_GROUP_IDS = config.allowedGroupIds
+  ? config.allowedGroupIds.split(",").map((id) => id.trim())
+  : [];
+
 let sentMessages = [];
 if (fs.existsSync(LOG_PATH)) {
   sentMessages = JSON.parse(fs.readFileSync(LOG_PATH, "utf-8"));
@@ -70,7 +74,12 @@ async function ensureSession(sock, jid) {
 async function handleMessage(sock, msg) {
   try {
     const from = msg.key.remoteJid;
-    if (from !== config.sourceGroupId) return;
+
+    // בדיקה אם זו קבוצה מותרת
+    const isGroup = from.endsWith("@g.us");
+    const isAllowedGroup = ALLOWED_GROUP_IDS.includes(from);
+    if (!isGroup || !isAllowedGroup) return;
+
     if (msg.key.fromMe) return;
 
     const messageType = Object.keys(msg.message || {})[0];
@@ -79,15 +88,12 @@ async function handleMessage(sock, msg) {
     if (!contentText) return;
 
     const keyWords = config.keywords;
-    console.log("keyword are:", keyWords);
-    console.log("keyword length:", keyWords.length);
     let hasKeyword;
     if (keyWords.length !== 0) {
-      hasKeyword = includesKeywords(contentText, config.keywords);
-      console.log(hasKeyword);
+      hasKeyword = includesKeywords(contentText, keyWords);
     }
+
     const hasValidDate = hasDateWithin7Days(contentText);
-    console.log(contentText);
     if (!hasKeyword && !hasValidDate) {
       console.log("⛔ לא נמצאו גם מילות מפתח וגם תאריך בטווח 7 ימים");
       return;
@@ -97,12 +103,24 @@ async function handleMessage(sock, msg) {
       console.log("⛔ תאריך לא בטווח של 7 ימים");
       return;
     }
+
     if (sentMessages.includes(contentText)) {
       console.log("⛔ הודעה כפולה - לא נשלחת שוב");
       return;
     }
 
-    // 📡 ודא session עם קבוצת היעד
+    // שליפת שם הקבוצה
+    let groupName = "קבוצה לא מזוהה";
+    try {
+      const metadata = await sock.groupMetadata(from);
+      groupName = metadata.subject;
+    } catch (err) {
+      console.warn("⚠️ לא ניתן היה לשלוף שם קבוצה:", err.message);
+    }
+
+    const fullMessage = `📢 מהקבוצה: *${groupName}*\n\n${contentText}`;
+
+    // שליחת נוכחות
     await ensureSession(sock, config.myNumberId);
 
     if (
@@ -112,11 +130,11 @@ async function handleMessage(sock, msg) {
       const mediaBuffer = await downloadMediaMessage(msg, "buffer", {});
       await sock.sendMessage(config.myNumberId, {
         [messageType.replace("Message", "")]: mediaBuffer,
-        caption: contentText,
+        caption: fullMessage,
         mimetype: message.mimetype,
       });
     } else {
-      await sock.sendMessage(config.myNumberId, { text: contentText });
+      await sock.sendMessage(config.myNumberId, { text: fullMessage });
     }
 
     console.log("✅ הודעה נשלחה אליך ישירות");
