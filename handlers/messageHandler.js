@@ -74,13 +74,13 @@ async function ensureSession(sock, jid) {
 async function handleMessage(sock, msg) {
   try {
     const from = msg.key.remoteJid;
-
     // בדיקה אם זו קבוצה מותרת
     const isGroup = from.endsWith("@g.us");
     const isAllowedGroup = ALLOWED_GROUP_IDS.includes(from);
+
     if (!isGroup || !isAllowedGroup) return;
 
-    if (msg.key.fromMe) return;
+    // if (msg.key.fromMe) return;
 
     const messageType = Object.keys(msg.message || {})[0];
     const message = msg.message?.[messageType];
@@ -93,16 +93,16 @@ async function handleMessage(sock, msg) {
       hasKeyword = includesKeywords(contentText, keyWords);
     }
 
-    const hasValidDate = hasDateWithin7Days(contentText);
-    if (!hasKeyword && !hasValidDate) {
-      console.log("⛔ לא נמצאו גם מילות מפתח וגם תאריך בטווח 7 ימים");
-      return;
-    }
+    // const hasValidDate = hasDateWithin7Days(contentText);
+    // if (!hasKeyword && !hasValidDate) {
+    //   console.log("⛔ לא נמצאו גם מילות מפתח וגם תאריך בטווח 7 ימים");
+    //   return;
+    // }
 
-    if (!hasValidDate) {
-      console.log("⛔ תאריך לא בטווח של 7 ימים");
-      return;
-    }
+    // if (!hasValidDate) {
+    //   console.log("⛔ תאריך לא בטווח של 7 ימים");
+    //   return;
+    // }
 
     if (sentMessages.includes(contentText)) {
       console.log("⛔ הודעה כפולה - לא נשלחת שוב");
